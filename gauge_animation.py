@@ -21,18 +21,18 @@ def plot_gauge(ax, tps_value, x_axis_val, colors, title):
     )
     # for loc, val in zip([0, 0.44, 0.88, 1.32, 1.76, 2.2, 2.64, 3.14], values):
     #     zx.annotate(val, xy=(loc, 2.5), ha="right" if val <= 20 else "left")
-    arrow = plt.annotate(
+    arrow = ax.annotate(
         f"{tps_value}",
         xytext=(0, 0),
         xy=(x_axis_val, 2),
-        arrowprops=dict(arrowstyle="wedge, tail_width=0.5", color="black", shrinkA=0),
+        arrowprops=dict(arrowstyle="wedge, tail_width=0.5", color="white", shrinkA=0),
         bbox=dict(
             boxstyle="circle",
-            facecolor="black",
-            linewidth=2.0,
+            facecolor="white",
+            linewidth=0.1,
         ),
         fontsize=45,
-        color="white",
+        color="black",
         ha="center",
     )
     return gauge, arrow
@@ -45,30 +45,72 @@ def plot_gauge(ax, tps_value, x_axis_val, colors, title):
 # ax2 = plot_gauge(ax2, 100, x_axis_val, colors=["white", "green"], title="Java")
 # plt.savefig(FIGURES_DIRECTORY / "gauge.png")
 
-
 max_value_gauge = 300
-tps_values_java = np.array([1, 50, 100, 60, 60, 60, 60, 60])
+n_frames_delay_1, n_frames_delay_2 = 5, 20
+tps_values_java = np.concatenate(
+    [
+        np.array([1]),
+        np.arange(5, 70, 5),
+        np.arange(64, 59, -1),  # tiene que tener longitud n_frames_delay_1
+        np.repeat(60, n_frames_delay_2),
+    ]
+)
 x_values_java = np.pi - tps_values_java / max_value_gauge * np.pi
-colores_java = [
-    ["white", "green"],
-    ["white", "green"],
-    ["white", "red"],
-    ["red", "green"],
-    ["red", "green"],
-    ["red", "green"],
-    ["red", "green"],
-    ["red", "green"],
-]
-tps_values_rust = np.concatenate([np.array([1]), np.arange(5, 230, 5), np.array([220])])
+colores_java = [["white", "green"]] * (
+    tps_values_java.shape[0] - (n_frames_delay_1 + n_frames_delay_2)
+)
+colores_java.extend([["white", "red"]] * n_frames_delay_1)
+colores_java.extend([["red", "green"]] * n_frames_delay_2)
+tps_values_rust = np.concatenate(
+    [
+        np.array([1]),
+        np.arange(5, 230, 5),
+        np.arange(224, 219, -1),
+        np.repeat(220, n_frames_delay_2),
+    ]
+)
 x_values_rust = np.pi - tps_values_rust / max_value_gauge * np.pi
-colores_rust = [["white", "green"]] * (tps_values_rust.shape[0] - 2)
-colores_rust.append(["white", "red"])
-colores_rust.append(["red", "green"])
+colores_rust = [["white", "green"]] * (
+    tps_values_rust.shape[0] - (6 + n_frames_delay_2)
+)
+colores_rust.extend([["white", "red"]] * 5)
+colores_rust.extend([["red", "green"]] * (1 + n_frames_delay_2))
+plt.pause(3)
 fig = plt.figure(figsize=(36, 18))
-ax1 = fig.add_subplot(projection="polar")
+ax1 = fig.add_subplot(1, 2, 1, projection="polar")
 ax1.set_axis_off()
-gauge_rust, arrow_rust = plot_gauge(
+ax1.set_title(
+    "Java", loc="center", pad=20, fontsize=35, fontweight="bold", color="white"
+)
+ax2 = fig.add_subplot(1, 2, 2, projection="polar")
+ax2.set_axis_off()
+ax2.set_title(
+    "Rust",
+    loc="center",
+    pad=20,
+    fontsize=35,
+    fontweight="bold",
+    color="white",
+)
+# turn off axis spines
+ax1.xaxis.set_visible(False)
+ax1.yaxis.set_visible(False)
+ax1.set_frame_on(False)
+ax2.xaxis.set_visible(False)
+ax2.yaxis.set_visible(False)
+ax2.set_frame_on(False)
+# set figure background opacity (alpha) to 0
+fig.patch.set_alpha(0.0)
+
+gauge_java, arrow_java = plot_gauge(
     ax1,
+    f"{tps_values_java[0]}",
+    x_values_java[0],
+    colors=colores_java[0],
+    title="Java",
+)
+gauge_rust, arrow_rust = plot_gauge(
+    ax2,
     f"{tps_values_rust[0]}",
     x_values_rust[0],
     colors=colores_rust[0],
@@ -77,37 +119,47 @@ gauge_rust, arrow_rust = plot_gauge(
 
 
 def animate(i):
-    x_axis_val_rust = x_values_rust[i]
-    gauge_rust[0].set_width(x_axis_val_rust)
-    gauge_rust[0].set_color(colores_rust[i][0])
-    gauge_rust[1].set_x(x_axis_val_rust)
-    gauge_rust[1].set_width(np.pi - x_axis_val_rust)
-    gauge_rust[1].set_color(colores_rust[i][1])
-    arrow_rust.set_text(f"{tps_values_rust[i]}")
-    arrow_rust.xy = (x_axis_val_rust, 2)
-    return gauge_rust, arrow_rust
+    if i < tps_values_java.shape[0]:
+        x_axis_val_java = x_values_java[i]
+        gauge_java[0].set_width(x_axis_val_java)
+        gauge_java[0].set_color(colores_java[i][0])
+        gauge_java[1].set_x(x_axis_val_java)
+        gauge_java[1].set_width(np.pi - x_axis_val_java)
+        gauge_java[1].set_color(colores_java[i][1])
+        arrow_java.set_text(f"{tps_values_java[i]}")
+        arrow_java.xy = (x_axis_val_java, 2)
+    else:
+        j = i - tps_values_java.shape[0]
+        x_axis_val_rust = x_values_rust[j]
+        gauge_rust[0].set_width(x_axis_val_rust)
+        gauge_rust[0].set_color(colores_rust[j][0])
+        gauge_rust[1].set_x(x_axis_val_rust)
+        gauge_rust[1].set_width(np.pi - x_axis_val_rust)
+        gauge_rust[1].set_color(colores_rust[j][1])
+        arrow_rust.set_text(f"{tps_values_rust[j]}")
+        arrow_rust.xy = (x_axis_val_rust, 2)
+    return gauge_java, arrow_java, gauge_rust, arrow_rust
 
     # plt.savefig(FIGURES_DIRECTORY / f"gauge_{i:02}.png")
     # plt.close(fig)
 
 
+total_frames = tps_values_java.shape[0] + tps_values_rust.shape[0]
+
 ani = animation.FuncAnimation(
     fig,
     animate,
-    interval=200,
+    interval=100,
     blit=False,  # blitting can't be used with Figure artists
-    frames=tps_values_rust.shape[0] - 1,
+    # frames=frame_gen,
+    frames=total_frames,
     repeat=False,
 )
-plt.show()
-fig = plt.figure(figsize=(36, 18))
-ax1 = fig.add_subplot(projection="polar")
-ax1.set_axis_off()
-gauge_rust, arrow_rust = plot_gauge(
-    ax1,
-    f"{tps_values_rust[-1]}",
-    x_values_rust[-1],
-    colors=colores_rust[-1],
-    title="Rust",
+
+ani.save(
+    "loadtest_gauge.mp4",
+    codec="png",
+    dpi=100,
+    bitrate=-1,
+    savefig_kwargs={"transparent": True, "facecolor": "none"},
 )
-plt.show()
