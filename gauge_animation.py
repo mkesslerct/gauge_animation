@@ -46,10 +46,10 @@ def plot_gauge(ax, tps_value, x_axis_val, colors, title):
 # plt.savefig(FIGURES_DIRECTORY / "gauge.png")
 
 max_value_gauge = 300
-n_frames_delay_1, n_frames_delay_2 = 5, 20
+n_frames_initial_delay, n_frames_delay_1, n_frames_delay_2 = 20, 5, 20
 tps_values_java = np.concatenate(
     [
-        np.array([1]),
+        np.array([1] * n_frames_initial_delay),
         np.arange(5, 70, 5),
         np.arange(64, 59, -1),  # tiene que tener longitud n_frames_delay_1
         np.repeat(60, n_frames_delay_2),
@@ -102,7 +102,7 @@ ax2.set_frame_on(False)
 fig.patch.set_facecolor("#202228")
 ax1.set_facecolor("#202228")
 ax2.set_facecolor("#202228")
-
+fig.tight_layout()
 gauge_java, arrow_java = plot_gauge(
     ax1,
     f"{tps_values_java[0]}",
@@ -156,5 +156,7 @@ ani = animation.FuncAnimation(
     frames=total_frames,
     repeat=False,
 )
-with open("embed_video_code.html", "w") as f:
-    print(ani.to_html5_video(), file=f)
+plt.show()
+
+# with open("embed_video_code.html", "w") as f:
+#     print(ani.to_html5_video(), file=f)
