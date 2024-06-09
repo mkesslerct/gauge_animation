@@ -99,8 +99,9 @@ ax1.set_frame_on(False)
 ax2.xaxis.set_visible(False)
 ax2.yaxis.set_visible(False)
 ax2.set_frame_on(False)
-# set figure background opacity (alpha) to 0
-fig.patch.set_alpha(0.0)
+fig.patch.set_facecolor("#202228")
+ax1.set_facecolor("#202228")
+ax2.set_facecolor("#202228")
 
 gauge_java, arrow_java = plot_gauge(
     ax1,
@@ -155,11 +156,5 @@ ani = animation.FuncAnimation(
     frames=total_frames,
     repeat=False,
 )
-
-ani.save(
-    "loadtest_gauge.mp4",
-    codec="png",
-    dpi=100,
-    bitrate=-1,
-    savefig_kwargs={"transparent": True, "facecolor": "none"},
-)
+with open("embed_video_code.html", "w") as f:
+    print(ani.to_html5_video(), file=f)
